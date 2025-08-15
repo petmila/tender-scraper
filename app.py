@@ -1,11 +1,12 @@
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
+
+from utils.web_scraper import WebScraper
 
 app = FastAPI()
 
 
 @app.get("/tenders")
 def get_tenders():
-    return FileResponse("data/tenders.csv",
-                        filename="data/tenders.csv",
-                        media_type="application/octet-stream")
+    scraper = WebScraper()
+    df = scraper.parse_website(100)
+    return {"tenders": df.to_dict(orient="records")}
