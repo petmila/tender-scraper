@@ -4,16 +4,9 @@ import lxml.html as html
 from pandas import DataFrame
 from requests import get
 
-from utils.tender import Tender
+from config import URL_START, proxies, headers, URL_BASE
+from utils.tender import Tender, Branch
 
-proxies = {
-   'http': 'http://proxy.example.com:8080',
-}
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.87 Safari/537.36"
-}
-URL_START: str = "/extsearch?page="
-URL_BASE: str = "https://rostender.info"
 
 class WebScraper:
     def __init__(self):
@@ -44,13 +37,15 @@ class WebScraper:
         for tender in tenders:
             td = Tender(
                 number = tender.get('id'),
-                dt_start=tender.xpath(".//time[@class='dtstart']")[0].text,
+                link = tender.xpath(".//div[@class='tender-info']/a/@href")[0],
+                dt_start = tender.xpath(".//time[@class='dtstart']")[0].text,
                 dt_end = tender.xpath(".//time[@class='dtend']")[0].text,
-                description=tender.xpath(".//div[@class='tender-info']/a")[0].text_content(),
+                description = tender.xpath(".//div[@class='tender-info']/a")[0].text_content(),
                 address = tender.xpath(".//div[@class='tender-address ']")[0].text_content(),
                 region = tender.xpath(".//a[@class='tender__region-link']")[0].text,
-                starting_price = tender_[0].text_content() if len(tender_ := tender.xpath(".//div[@class='starting-price__price starting-price--price']")) != 0 else "-",
-                branches = tender.xpath(".//a[@class='list-branches__link']")[0].text
+                starting_price = tender_[0].text_content()
+                if len(tender_ := tender.xpath(".//div[@class='starting-price__price starting-price--price']")) != 0 else "-",
+                branches = [Branch(name = b.text) for b in tender.xpath(".//a[@class='list-branches__link']")]
             )
 
             self.tenders_list.append(td.asdict())
